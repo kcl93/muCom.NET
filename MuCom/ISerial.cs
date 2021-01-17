@@ -33,6 +33,8 @@ namespace MuCom
 
         byte ReadByte();
 
+        void WriteBytes(byte[] data);
+
         #endregion
     }
 }

@@ -46,6 +46,8 @@ namespace MuCom
 
         public byte ReadByte() => (byte)this.serial.ReadByte();
 
+        public void WriteBytes(byte[] data) => this.serial.Write(data, 0, data.Length);
+
         private void SerialDataReceivedHandler(object obj, SerialDataReceivedEventArgs e)
         {
             var localCopy = (DataReceivedEventHandler)this.DataReceived.Clone();
