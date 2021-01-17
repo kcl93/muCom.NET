@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.30611.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MuCom", "MuCom\MuCom.csproj", "{3AEF7F96-022B-4161-BEE6-E45AE3C1BFF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuComTests", "MuComTests\MuComTests.csproj", "{B9CAD47B-2BCB-4FB4-B476-4EC8D48AEF71}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MuComTests", "MuComTests\MuComTests.csproj", "{B9CAD47B-2BCB-4FB4-B476-4EC8D48AEF71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuComGUI", "MuComGUI\MuComGUI.csproj", "{BD5F3BFB-F56B-415F-8619-220DDDE8637E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{B9CAD47B-2BCB-4FB4-B476-4EC8D48AEF71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9CAD47B-2BCB-4FB4-B476-4EC8D48AEF71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9CAD47B-2BCB-4FB4-B476-4EC8D48AEF71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD5F3BFB-F56B-415F-8619-220DDDE8637E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD5F3BFB-F56B-415F-8619-220DDDE8637E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD5F3BFB-F56B-415F-8619-220DDDE8637E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD5F3BFB-F56B-415F-8619-220DDDE8637E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
