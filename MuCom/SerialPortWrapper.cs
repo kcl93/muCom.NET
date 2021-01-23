@@ -29,6 +29,10 @@ namespace MuCom
         {
             this.serial = new SerialPort(portName, baudrate, parity, 8, stopBits);
 
+            this.serial.Handshake = Handshake.None;
+            this.serial.DtrEnable = true;
+            this.serial.RtsEnable = true;
+
             this.serial.ReceivedBytesThreshold = 1;
 
             this.serial.DataReceived += new SerialDataReceivedEventHandler(this.SerialDataReceivedHandler);
@@ -44,18 +48,29 @@ namespace MuCom
 
         public int Available() => this.serial.BytesToRead;
 
-        public byte ReadByte() => (byte)this.serial.ReadByte();
+        public byte Read() => (byte)this.serial.ReadByte();
 
-        public void WriteBytes(byte[] data) => this.serial.Write(data, 0, data.Length);
+        public byte[] Read(int count)
+        {
+            byte[] data = new byte[count];
+
+            int readCount = this.serial.Read(data, 0, count);
+
+            if(readCount < count)
+            {
+                throw new TimeoutException("Insufficient data received! " + readCount.ToString() + " bytes received instead of " + count.ToString() + ".");
+            }
+
+            return data;
+        }
+
+        public void Write(byte[] data) => this.serial.Write(data, 0, data.Length);
+
+        public void FlushTx() => this.serial.BaseStream.Flush();
 
         private void SerialDataReceivedHandler(object obj, SerialDataReceivedEventArgs e)
         {
-            var localCopy = (DataReceivedEventHandler)this.DataReceived.Clone();
-
-            if(localCopy != null)
-            {
-                localCopy(this.serial);
-            }
+            ((DataReceivedEventHandler)this.DataReceived.Clone())?.Invoke(this.serial);
         }
 
         #endregion

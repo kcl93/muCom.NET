@@ -41,7 +41,6 @@ namespace MuComTests
         [InlineData(MuComFrameDesc.ReadResponse, 249, 4, new byte[4] { 0x75, 0x12, 0x00, 0xFA })]
         [InlineData(MuComFrameDesc.WriteRequest, 19, 4, new byte[4] { 0x75, 0x12, 0x00, 0xFA })]
         [InlineData(MuComFrameDesc.ReadRequest, 0, 4, new byte[0])]
-        [InlineData(MuComFrameDesc.ReadResponse, 249, 4, new byte[4] { 0x75, 0x12, 0x00, 0xFA })]
         public void ConstructorShouldConvertFineInBothDirections(MuComFrameDesc desc, byte ID, int dataCount, byte[] dataBytes)
         {
             //Arrange

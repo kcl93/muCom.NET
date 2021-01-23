@@ -90,7 +90,7 @@ namespace MuCom
 
             //Create first bytes with header and variable index
             this.RawBuffer[0] = (byte)(0x80 | (int)this.Description | ((this.DataCount - 1) << 2) | (this.ID >> 6));
-            this.RawBuffer[1] = (byte)((this.ID & 0x3F) << 1);
+            this.RawBuffer[1] = (byte)((this.ID << 1) & 0x7F);
 
             //Handle read request differently
             if(this.Description == MuComFrameDesc.ReadRequest)

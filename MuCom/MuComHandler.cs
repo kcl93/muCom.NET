@@ -68,7 +68,7 @@ namespace MuCom
         };
 
         #endregion
-        
+
         #region Delegates
 
         private delegate void WriteVariable(object target, object value);
@@ -110,8 +110,6 @@ namespace MuCom
 
         private readonly object variableLock = new object();
 
-        private readonly object readLock = new object();
-
         #endregion
 
         #region Public properties
@@ -144,7 +142,7 @@ namespace MuCom
             this.serial = new SerialPortWrapper(portName, baudrate, parity, stopBits);
 
             this.serial.DataReceived += new DataReceivedEventHandler(this.DataReceivedHandler);
-            
+
             this.Timeout = 100;
         }
 
@@ -178,6 +176,8 @@ namespace MuCom
             }
         }
 
+        #region Methods for linking variables and functions
+
         public void UnlinkMethod(byte ID)
         {
             lock (functionLock)
@@ -195,7 +195,7 @@ namespace MuCom
 
             lock (this.functionLock)
             {
-                if(this.linkedFunctions.ContainsKey(ID) == true)
+                if (this.linkedFunctions.ContainsKey(ID) == true)
                 {
                     this.linkedFunctions[ID] = function;
                 }
@@ -224,7 +224,7 @@ namespace MuCom
             Type type = obj.GetType();
             if (type.GetField(name) is null)
             {
-                if(type.GetProperty(name) is null)
+                if (type.GetProperty(name) is null)
                 {
                     throw new ArgumentException("Object '" + type.Name + "' does not have a field or property with the name '" + name + "'");
                 }
@@ -236,7 +236,7 @@ namespace MuCom
                 {
                     throw new ArgumentException("Type '" + variable.PropertyType.Name + "' of property '" + name + "' of class '" + type.Name + "' is not supported!");
                 }
-                
+
                 //It is a property
                 accessors.Write = new WriteVariable(variable.SetValue);
                 accessors.Read = new ReadVariable(variable.GetValue);
@@ -258,7 +258,7 @@ namespace MuCom
 
             accessors.variable = obj;
 
-            lock(variableLock)
+            lock (variableLock)
             {
                 if (this.linkedVariables.ContainsKey(ID) == true)
                 {
@@ -273,6 +273,156 @@ namespace MuCom
 
         #endregion
 
+        #region Methods for reading variables
+
+        public byte[] Read(byte ID, int dataCount)
+        {
+            var frame = new MuComFrame(MuComFrameDesc.ReadRequest, ID, dataCount, null);
+            this.serial.FlushTx();
+            this.serial.Write(frame.RawBuffer);
+            this.serial.FlushTx();
+            return new byte[1];
+        }
+
+        public byte ReadByte(byte ID)
+        {
+            return this.Read(ID, 1)[0];
+        }
+
+        public sbyte ReadSByte(byte ID)
+        {
+            return (sbyte)this.ReadByte(ID);
+        }
+
+        public ushort ReadUShort(byte ID)
+        {
+            var data = this.Read(ID, 2);
+            ushort value = (ushort)data[0];
+            value += (ushort)(data[1] * 256);
+            return value;
+        }
+
+        public short ReadShort(byte ID)
+        {
+            return (short)this.ReadUShort(ID);
+        }
+
+        public uint ReadUInt(byte ID)
+        {
+            var data = this.Read(ID, 4);
+            uint value = (uint)data[0];
+            value += (uint)data[1] * 256;
+            value += (uint)data[2] * 256 * 256;
+            value += (uint)data[3] * 256 * 256 * 256;
+            return value;
+        }
+
+        public int ReadInt(byte ID)
+        {
+            return (int)this.ReadUInt(ID);
+        }
+
+        public ulong ReadULong(byte ID)
+        {
+            var data = this.Read(ID, 8);
+            ulong value = (ulong)data[0];
+            value += (ulong)data[1] * 256;
+            value += (ulong)data[2] * 256 * 256;
+            value += (ulong)data[3] * 256 * 256 * 256;
+            value += (ulong)data[4] * 256 * 256 * 256 * 256;
+            value += (ulong)data[5] * 256 * 256 * 256 * 256 * 256;
+            value += (ulong)data[6] * 256 * 256 * 256 * 256 * 256 * 256;
+            value += (ulong)data[7] * 256 * 256 * 256 * 256 * 256 * 256 * 256;
+            return value;
+        }
+
+        public long ReadLong(byte ID)
+        {
+            return (long)this.ReadULong(ID);
+        }
+
+        #endregion
+
+        #region Methods for writing variables
+
+        public void Write(byte ID, byte[] data)
+        {
+            var frame = new MuComFrame(MuComFrameDesc.WriteRequest, ID, data.Length, data);
+            this.serial.Write(frame.RawBuffer);
+        }
+
+        public void WriteByte(byte ID, byte value)
+        {
+            this.Write(ID, new byte[] { value });
+        }
+
+        public void WriteSByte(byte ID, sbyte value)
+        {
+            this.WriteByte(ID, (byte)value);
+        }
+
+        public void WriteUShort(byte ID, ushort value)
+        {
+            var data = new byte[2];
+            data[0] = (byte)value;
+            data[1] = (byte)(value / 256);
+            this.Write(ID, data);
+        }
+
+        public void WriteShort(byte ID, short value)
+        {
+            this.WriteUShort(ID, (ushort)value);
+        }
+
+        public void WriteUInt(byte ID, uint value)
+        {
+            var data = new byte[4];
+            data[0] = (byte)value;
+            data[1] = (byte)(value / 256);
+            data[2] = (byte)(value / 256 / 256);
+            data[3] = (byte)(value / 256 / 256 / 256);
+            this.Write(ID, data);
+        }
+
+        public void WriteInt(byte ID, int value)
+        {
+            this.WriteUInt(ID, (uint)value);
+        }
+
+        public void WriteULong(byte ID, ulong value)
+        {
+            var data = new byte[4];
+            data[0] = (byte)value;
+            data[1] = (byte)(value / 256);
+            data[2] = (byte)(value / 256 / 256);
+            data[3] = (byte)(value / 256 / 256 / 256);
+            data[4] = (byte)(value / 256 / 256 / 256 / 256);
+            data[5] = (byte)(value / 256 / 256 / 256 / 256 / 256);
+            data[6] = (byte)(value / 256 / 256 / 256 / 256 / 256 / 256);
+            data[7] = (byte)(value / 256 / 256 / 256 / 256 / 256 / 256 / 256);
+            this.Write(ID, data);
+        }
+
+        public void WriteLong(byte ID, long value)
+        {
+            this.WriteULong(ID, (ulong)value);
+        }
+
+        #endregion
+
+        #region Methods for executing functions
+
+        public void Execute(byte ID, byte[] data = null)
+        {
+            if (data is null) data = new byte[0];
+            var frame = new MuComFrame(MuComFrameDesc.ExecuteRequest, ID, data.Length, data);
+            this.serial.Write(frame.RawBuffer);
+        }
+
+        #endregion
+
+        #endregion
+
         #region Private helper methods
 
         private void DataReceivedHandler(object sender)
@@ -283,7 +433,7 @@ namespace MuCom
                 while (this.serial.Available() > 0)
                 {
                     //Get byte from receive buffer
-                    byte receivedByte = this.serial.ReadByte();
+                    byte receivedByte = this.serial.Read();
 
                     if (MuComFrame.IsHeaderByte(receivedByte) == true)
                     {
@@ -401,7 +551,7 @@ namespace MuCom
                     }
 
                     var response = new MuComFrame(MuComFrameDesc.ReadResponse, this.lastFrame.ID, this.lastFrame.DataCount, data);
-                    this.serial.WriteBytes(response.RawBuffer);
+                    this.serial.Write(response.RawBuffer);
                 }
             }
         }
