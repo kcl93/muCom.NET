@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:local="clr-namespace:MuComGUI"
         mc:Ignorable="d"
         Title="MuComGUI" Height="450" Width="550">
@@ -11,7 +12,7 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition/>
+            <RowDefinition Height="60"/>
             <RowDefinition/>
             <RowDefinition/>
         </Grid.RowDefinitions>
@@ -28,14 +29,38 @@
                 <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5" Text="COM Port:"/>
                 <ComboBox Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left" Width="70" Name="SerialPorts"/>
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5" Text="Baudrate:"/>
-                <TextBox Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Left" Width="80" Name="Baudrate"/>
+                <TextBox Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Left" Width="50" Name="TBBaudrate" Text="250000" TextAlignment="Right" KeyDown="NumericTextBox_KeyDown"/>
                 <Button Grid.Column="4" VerticalAlignment="Center" Name="OpenButton" Content="Open" Width="50" Click="OpenButton_Click"/>
                 <Button Grid.Column="5" VerticalAlignment="Center" Name="CloseButton" Content="Close" Width="50" Click="CloseButton_Click"/>
             </Grid>
         </GroupBox>
         <GroupBox Grid.Row="1" Header="Read/Write variables" Grid.ColumnSpan="2">
+            <DataGrid>
+                
+            </DataGrid>
+        </GroupBox>
+        <GroupBox Grid.Row="2" Header="Variable graph">
             <Grid>
-
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <CheckBox Grid.Row="0" Content="Active" Name="GraphActive" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <Grid Grid.Row="1" Height="Auto">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Update rate [ms]:" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Name="TBUpdateRate" VerticalAlignment="Center" Width="40" KeyDown="NumericTextBox_KeyDown" TextAlignment="Center" Text="1000"/>
+                    </Grid>
+                </Grid>
+                <oxy:Plot Grid.Column="1" Name="Graph" Margin="5"/>
             </Grid>
         </GroupBox>
     </Grid>
