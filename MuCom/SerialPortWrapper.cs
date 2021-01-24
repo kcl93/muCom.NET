@@ -68,6 +68,8 @@ namespace MuCom
 
         public void FlushTx() => this.serial.BaseStream.Flush();
 
+        public void FlushRx() => this.serial.DiscardInBuffer();
+
         private void SerialDataReceivedHandler(object obj, SerialDataReceivedEventArgs e)
         {
             ((DataReceivedEventHandler)this.DataReceived.Clone())?.Invoke(this.serial);

@@ -39,6 +39,8 @@ namespace MuCom
 
         void FlushTx();
 
+        void FlushRx();
+
         #endregion
     }
 }

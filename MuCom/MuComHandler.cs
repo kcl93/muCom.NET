@@ -150,6 +150,8 @@ namespace MuCom
 
         #region Public methods
 
+        #region General methods
+
         public void Open()
         {
             lock (this.serialLock)
@@ -175,6 +177,8 @@ namespace MuCom
                 this.byteCounter = 0;
             }
         }
+
+        #endregion
 
         #region Methods for linking variables and functions
 
@@ -279,9 +283,12 @@ namespace MuCom
         {
             var frame = new MuComFrame(MuComFrameDesc.ReadRequest, ID, dataCount, null);
             this.serial.FlushTx();
+            this.serial.FlushRx();
             this.serial.Write(frame.RawBuffer);
             this.serial.FlushTx();
-            return new byte[1];
+            var data = this.serial.Read(MuComFrame.GetFrameSizeFromDataCount(MuComFrameDesc.ReadResponse, dataCount));
+            frame = new MuComFrame(data);
+            return frame.DataBytes;
         }
 
         public byte ReadByte(byte ID)
