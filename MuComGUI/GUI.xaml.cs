@@ -28,6 +28,10 @@ namespace MuComGUI
     {
         #region Properties
 
+        readonly object readLock = new object();
+
+        readonly object waitLock = new object();
+
         Timer Timer = null;
 
         Dispatcher dispatcher = null;
@@ -95,17 +99,26 @@ namespace MuComGUI
 
         public void UpdateData(object sender)
         {
-            if (this.muCom is null) return;
+            if (Monitor.TryEnter(this.waitLock, 0) == false) return;
 
-            foreach(var data in this.DataPoints)
+            //Only one additional thread can wait here
+
+            lock(this.readLock)
             {
-                //var value = this.muCom.Read();
-                //var timestamp = this.
-                //if (data.Value.Count >= 800)
-                //{
+                Monitor.Exit(this.waitLock);
 
-                //}
-                //data.Value[data.Value.Count - 1] = new DataPoint;
+                if (this.muCom is null) return;
+
+                foreach (var data in this.DataPoints)
+                {
+                    //var value = this.muCom.Read();
+                    //var timestamp = this.
+                    //if (data.Value.Count >= 800)
+                    //{
+
+                    //}
+                    //data.Value[data.Value.Count - 1] = new DataPoint;
+                }
             }
         }
 
