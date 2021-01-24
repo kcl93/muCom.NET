@@ -33,13 +33,7 @@ namespace MuCom
 
         byte Read();
 
-        byte[] Read(int count);
-
         void Write(byte[] data);
-
-        void FlushTx();
-
-        void FlushRx();
 
         #endregion
     }

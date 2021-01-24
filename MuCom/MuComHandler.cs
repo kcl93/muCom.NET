@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Linq;
@@ -109,6 +109,8 @@ namespace MuCom
         private readonly object functionLock = new object();
 
         private readonly object variableLock = new object();
+
+        private readonly object readLock = new object();
 
         #endregion
 
@@ -282,13 +284,24 @@ namespace MuCom
         public byte[] Read(byte ID, int dataCount)
         {
             var frame = new MuComFrame(MuComFrameDesc.ReadRequest, ID, dataCount, null);
-            this.serial.FlushTx();
-            this.serial.FlushRx();
-            this.serial.Write(frame.RawBuffer);
-            this.serial.FlushTx();
-            var data = this.serial.Read(MuComFrame.GetFrameSizeFromDataCount(MuComFrameDesc.ReadResponse, dataCount));
-            frame = new MuComFrame(data);
-            return frame.DataBytes;
+
+            lock (this.readLock)
+            {
+                lock (this.serialLock)
+                {
+                    this.serial.Write(frame.RawBuffer);
+                    this.lastFrame = null;
+                }
+                var timeout = Stopwatch.StartNew();
+                while(this.lastFrame is null)
+                {
+                    if(timeout.ElapsedMilliseconds > this.serial.ReadTimeout)
+                    {
+                        throw new TimeoutException("Did not receive answer to read request within timeout!");
+                    }
+                }
+                return this.lastFrame.DataBytes;
+            }
         }
 
         public byte ReadByte(byte ID)

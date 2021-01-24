@@ -50,25 +50,7 @@ namespace MuCom
 
         public byte Read() => (byte)this.serial.ReadByte();
 
-        public byte[] Read(int count)
-        {
-            byte[] data = new byte[count];
-
-            int readCount = this.serial.Read(data, 0, count);
-
-            if(readCount < count)
-            {
-                throw new TimeoutException("Insufficient data received! " + readCount.ToString() + " bytes received instead of " + count.ToString() + ".");
-            }
-
-            return data;
-        }
-
         public void Write(byte[] data) => this.serial.Write(data, 0, data.Length);
-
-        public void FlushTx() => this.serial.BaseStream.Flush();
-
-        public void FlushRx() => this.serial.DiscardInBuffer();
 
         private void SerialDataReceivedHandler(object obj, SerialDataReceivedEventArgs e)
         {
