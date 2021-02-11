@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO.Ports;
-
-namespace MuCom
+﻿namespace MuCom
 {
     public delegate void DataReceivedEventHandler(object sender);
 

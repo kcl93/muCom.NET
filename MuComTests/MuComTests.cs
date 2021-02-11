@@ -17,7 +17,7 @@ namespace MuComTests
 
         #region Methods used for linking
 
-        public void DoStuff(byte[] data)
+        private void DoStuff(byte[] data)
         {
             //Do nothing
         }

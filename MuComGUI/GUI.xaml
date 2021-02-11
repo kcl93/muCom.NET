@@ -6,7 +6,7 @@
         xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:local="clr-namespace:MuComGUI"
         mc:Ignorable="d"
-        Title="MuComGUI" Height="450" Width="550">
+        Title="MuComGUI" Height="450" MinHeight="450" Width="550"  MinWidth="610">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -31,14 +31,49 @@
                 <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5" Text="Baudrate:"/>
                 <TextBox Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Left" Width="50" Name="TBBaudrate" Text="250000" TextAlignment="Right" KeyDown="NumericTextBox_KeyDown"/>
                 <Button Grid.Column="4" VerticalAlignment="Center" Name="OpenButton" Content="Open" Width="50" Click="OpenButton_Click"/>
-                <Button Grid.Column="5" VerticalAlignment="Center" Name="CloseButton" Content="Close" Width="50" Click="CloseButton_Click"/>
+                <Button Grid.Column="5" VerticalAlignment="Center" Name="CloseButton" Content="Close" Width="50" Click="CloseButton_Click" IsEnabled="False"/>
             </Grid>
         </GroupBox>
-        <GroupBox Grid.Row="1" Header="Read/Write variables" Grid.ColumnSpan="2">
-            <DataGrid>
-                
-            </DataGrid>
-        </GroupBox>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition MinWidth="350" Width="0.6*"/>
+                <ColumnDefinition MinWidth="250" Width="0.4*"/>
+            </Grid.ColumnDefinitions>
+            <GroupBox Grid.Column="0" Header="Target variables">
+                <DataGrid Name="TargetVariablesGrid" AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Width="35" Binding="{Binding ID}"/>
+                        <DataGridTextColumn Header="Value" Width="80" Binding="{Binding Value}"/>
+                        <DataGridComboBoxColumn Header="Type" Width="70" ItemsSource="{Binding Source={x:Static local:VariableInfo.AllowedVariableTypeNames}}" SelectedItemBinding="{Binding VariableTypeName, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DataGridCheckBoxColumn Header="Plot" Width="31" Binding="{Binding Plot, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DataGridTemplateColumn Header="Read" Width="50">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button x:Name="ReadVariableButton" Content="Read" Width="40" HorizontalAlignment="Center" Click="ReadVariableButton_Click" IsEnabled="{Binding IsEnabled, ElementName=CloseButton}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Write" Width="50">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button x:Name="WriteVariableButton" Content="Write" Width="40" HorizontalAlignment="Center" Click="WriteVariableButton_Click" IsEnabled="{Binding IsEnabled, ElementName=CloseButton}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+            <GroupBox Grid.Column="1" Header="Own variables">
+                <DataGrid Name="OwnVariablesGrid" AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Width="35" Binding="{Binding ID}"/>
+                        <DataGridTextColumn Header="Value" Width="80" Binding="{Binding Value}"/>
+                        <DataGridComboBoxColumn Header="Type" Width="70" ItemsSource="{Binding Source={x:Static local:VariableInfo.AllowedVariableTypeNames}}" SelectedItemBinding="{Binding VariableTypeName, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DataGridCheckBoxColumn Header="Plot" Width="31" Binding="{Binding Plot, UpdateSourceTrigger=PropertyChanged}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+        </Grid>
         <GroupBox Grid.Row="2" Header="Variable graph">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -50,7 +85,7 @@
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <CheckBox Grid.Row="0" Content="Active" Name="GraphActive" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <CheckBox Grid.Row="0" Content="Active" Name="GraphActive" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="GraphActive_Checked"/>
                     <Grid Grid.Row="1" Height="Auto">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -60,7 +95,7 @@
                         <TextBox Grid.Row="1" Name="TBUpdateRate" VerticalAlignment="Center" Width="40" KeyDown="NumericTextBox_KeyDown" TextAlignment="Center" Text="1000"/>
                     </Grid>
                 </Grid>
-                <oxy:Plot Grid.Column="1" Name="Graph" Margin="5"/>
+                <oxy:PlotView Grid.Column="1" Name="Graph" Margin="5"/>
             </Grid>
         </GroupBox>
     </Grid>

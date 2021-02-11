@@ -292,6 +292,7 @@ namespace MuCom
                     this.serial.Write(frame.RawBuffer);
                     this.lastFrame = null;
                 }
+
                 var timeout = Stopwatch.StartNew();
                 while(this.lastFrame is null)
                 {
@@ -300,6 +301,12 @@ namespace MuCom
                         throw new TimeoutException("Did not receive answer to read request within timeout!");
                     }
                 }
+
+                if(this.lastFrame.DataCount != dataCount)
+                {
+                    throw new ArgumentException("Invalid count of data bytes received (" + this.lastFrame.DataCount.ToString() + " instead of " + dataCount.ToString() + ")! Please check type of expected variable!");
+                }
+
                 return this.lastFrame.DataBytes;
             }
         }
@@ -359,6 +366,11 @@ namespace MuCom
         public long ReadLong(byte ID)
         {
             return (long)this.ReadULong(ID);
+        }
+
+        public float ReadFloat(byte ID)
+        {
+            return BitConverter.ToSingle(this.Read(ID, 4), 0);
         }
 
         #endregion
@@ -428,6 +440,11 @@ namespace MuCom
             this.WriteULong(ID, (ulong)value);
         }
 
+        public void WriteFloat(byte ID, float value)
+        {
+            this.Write(ID, BitConverter.GetBytes(value));
+        }
+
         #endregion
 
         #region Methods for executing functions
@@ -491,10 +508,18 @@ namespace MuCom
                         this.LastCommTime = DateTime.Now; //Save timestamp
 
                         //Sufficient data received. Decode it and do stuff if required
-                        var frame = new MuComFrame(this.frameBuffer);
+                        MuComFrame frame;
+                        try
+                        {
+                            frame = new MuComFrame(this.frameBuffer);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
 
                         //Act on the received frame
-                        switch (this.lastFrame.Description)
+                        switch (frame.Description)
                         {
                             case MuComFrameDesc.ExecuteRequest:
                                 this.HandleExecuteRequest(frame);

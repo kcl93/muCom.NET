@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MuCom
 {
@@ -45,9 +43,9 @@ namespace MuCom
 
             //Check input frame size
             int expectedLength = MuComFrame.GetFrameSizeFromDataCount(this.Description, this.DataCount);
-            if (inputBuffer.Length != expectedLength)
+            if (inputBuffer.Length < expectedLength)
             {
-                throw new ArgumentException("Input buffer size mismatch! " + expectedLength.ToString() + " bytes expected but input buffer contains " + inputBuffer.Length.ToString() + ".");
+                throw new ArgumentException("Input buffer size too small! " + expectedLength.ToString() + " expected but input buffer contains only " + inputBuffer.Length.ToString() + " bytes.");
             }
 
             //Create buffer for data bytes and intermediate buffer

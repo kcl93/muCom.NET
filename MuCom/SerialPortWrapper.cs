@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO.Ports;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.IO.Ports;
 
 namespace MuCom
 {
