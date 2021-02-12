@@ -42,7 +42,7 @@
             <GroupBox Grid.Column="0" Header="Target variables">
                 <DataGrid Name="TargetVariablesGrid" AutoGenerateColumns="False">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID" Width="35" Binding="{Binding ID}"/>
+                        <DataGridTextColumn Header="ID" Width="35" Binding="{Binding ID, UpdateSourceTrigger=PropertyChanged}"/>
                         <DataGridTextColumn Header="Value" Width="80" Binding="{Binding Value}"/>
                         <DataGridComboBoxColumn Header="Type" Width="70" ItemsSource="{Binding Source={x:Static local:VariableInfo.AllowedVariableTypeNames}}" SelectedItemBinding="{Binding VariableTypeName, UpdateSourceTrigger=PropertyChanged}"/>
                         <DataGridCheckBoxColumn Header="Plot" Width="31" Binding="{Binding Plot, UpdateSourceTrigger=PropertyChanged}"/>

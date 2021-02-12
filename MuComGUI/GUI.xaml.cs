@@ -241,7 +241,12 @@ namespace MuComGUI
         {
             try
             {
+                var button = (sender as Button);
+                if (button is null) return;
+
                 var variable = (sender as Button).DataContext as VariableInfo;
+                if (variable is null) return;
+
                 variable.Read(this.muCom);
             }
             catch
@@ -254,7 +259,12 @@ namespace MuComGUI
         {
             try
             {
+                var button = (sender as Button);
+                if (button is null) return;
+
                 var variable = (sender as Button).DataContext as VariableInfo;
+                if (variable is null) return;
+
                 variable.Write(this.muCom);
             }
             catch

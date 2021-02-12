@@ -500,8 +500,8 @@ namespace MuCom
                     int dataByteCount = MuComFrame.GetDataByteCountFromHeader(this.frameBuffer[0]);
 
                     if ((MuComFrame.GetFrameDescriptionFromHeader(this.frameBuffer[0]) == MuComFrameDesc.ReadRequest)
-                        || ((dataByteCount == 1) && (this.byteCounter >= (dataByteCount + 1)))
-                        || (this.byteCounter >= (dataByteCount + 2)))
+                        || ((dataByteCount == 1) && (this.byteCounter >= (dataByteCount + 2)))
+                        || (this.byteCounter > (dataByteCount + 2)))
                     {
                         this.byteCounter = 0; //Reset statemachine
 
