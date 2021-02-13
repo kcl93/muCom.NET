@@ -85,7 +85,7 @@
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <CheckBox Grid.Row="0" Content="Active" Name="GraphActive" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="GraphActive_Checked"/>
+                    <CheckBox Grid.Row="0" Content="Active" Name="GraphActive" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="GraphActive_Checked" Unchecked="GraphActive_Unchecked"/>
                     <Grid Grid.Row="1" Height="Auto">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>

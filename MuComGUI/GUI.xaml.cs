@@ -86,7 +86,7 @@ namespace MuComGUI
             }
             set
             {
-                this.Timer.Change(0, Math.Max(value, 1));
+                this.Timer?.Change(0, Math.Max(value, 1));
                 this.TBUpdateRate.Text = Math.Max(value, 1).ToString();
             }
         }
@@ -115,8 +115,6 @@ namespace MuComGUI
             this.GraphTimer = new DispatcherTimer(DispatcherPriority.Background);
             this.GraphTimer.Interval = new TimeSpan(0, 0, 0, 0, 100);
             this.GraphTimer.Tick += new EventHandler(this.UpdateGraph);
-
-            this.Timer = new Timer(new TimerCallback(this.UpdateData));
 
             //Load config file
             this.ReadXml();
@@ -147,16 +145,31 @@ namespace MuComGUI
 
                 if (this.muCom is null) return;
 
-                foreach (var data in this.DataPoints)
+                foreach(var variable in this.TargetVariables)
                 {
-                    var value = this.muCom.Read((byte)data.Key.ID, 1);
-                    var timestamp = DateTime.Now - this.graphStartTime;
-                    //if (data.Value.Count >= 800)
-                    //{
+                    if(variable.Plot == true)
+                    {
+                        try
+                        {
+                            variable.Read(this.muCom);
+                        }
+                        catch
+                        {
 
-                    //}
-                    //data.Value[data.Value.Count - 1] = new DataPoint();
+                        }
+                    }
                 }
+
+                //foreach (var data in this.DataPoints)
+                //{
+                //    var value = this.muCom.Read((byte)data.Key.ID, 1);
+                //    var timestamp = DateTime.Now - this.graphStartTime;
+                //    //if (data.Value.Count >= 800)
+                //    //{
+
+                //    //}
+                //    //data.Value[data.Value.Count - 1] = new DataPoint();
+                //}
             }
         }
 
@@ -347,7 +360,7 @@ namespace MuComGUI
             try
             {
                 this.GraphActive.IsChecked = false;
-                this.muCom.Close();
+                this.muCom?.Close();
                 this.OpenButton.IsEnabled = true;
                 this.CloseButton.IsEnabled = false;
             }
@@ -386,6 +399,16 @@ namespace MuComGUI
                     this.DataPoints.Add(variable, new List<DataPoint>() { new DataPoint(0.0, variable.ToDouble()) });
                 }
             }
+
+            this.GraphTimer.Start();
+            this.Timer = new Timer(this.UpdateData, null, 0, this.UpdateRate);
+        }
+
+        private void GraphActive_Unchecked(object sender, RoutedEventArgs e)
+        {
+            this.Timer.Dispose();
+            this.Timer = null;
+            this.GraphTimer.Stop();
         }
 
         private void ReadVariableButton_Click(object sender, RoutedEventArgs e)
@@ -426,6 +449,7 @@ namespace MuComGUI
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
+            this.CloseButton_Click(null, null);
             this.WriteXml();
         }
 

@@ -28,7 +28,7 @@ namespace MuComTests
         public void LinkVariableShouldThrowNoException()
         {
             //Arrange
-            var handler = new MuComHandler("COM 3", 19200);
+            var handler = new MuComHandler("COM3", 19200);
 
             //Act
             handler.LinkVariable(0, this, nameof(this.variableByte));
@@ -36,6 +36,7 @@ namespace MuComTests
             handler.LinkVariable(2, this, nameof(this.variableInt));
 
             //Assert
+            handler.ReadInt(0);
         }
 
         [Fact]
