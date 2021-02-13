@@ -21,6 +21,7 @@ using OxyPlot.Series;
 using MuCom;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Xml;
 
 namespace MuComGUI
 {
@@ -104,7 +105,8 @@ namespace MuComGUI
         {
             InitializeComponent();
 
-            this.DataContext = this;
+            //Get list of available COM ports
+            this.SerialPorts.ItemsSource = SerialPort.GetPortNames();
 
             //Get/create dispatcher for doing stuff in the GUI
             this.dispatcher = Dispatcher.CurrentDispatcher;
@@ -116,8 +118,10 @@ namespace MuComGUI
 
             this.Timer = new Timer(new TimerCallback(this.UpdateData));
 
+            //Load config file
+            this.ReadXml();
+
             //Link variables to screen
-            this.SerialPorts.ItemsSource = SerialPort.GetPortNames();
             this.TargetVariablesGrid.ItemsSource = this.TargetVariables;
             this.OwnVariablesGrid.ItemsSource = this.OwnVariables;
 
@@ -169,6 +173,153 @@ namespace MuComGUI
                     this.graphModel.Series.Add(series);
                 }
                 this.Graph.InvalidatePlot(true);
+            }
+        }
+
+        private void ReadXml()
+        {
+            try
+            {
+                var reader = XmlReader.Create("MuComGUI.xml");
+
+                if (reader.ReadToFollowing("MuComGUIConfig") == true)
+                {
+                    //Serial port
+                    if (reader.ReadToFollowing("SerialPort") == true)
+                    {
+                        var port = reader.ReadElementContentAsString();
+                        if ((this.SerialPorts.ItemsSource as string[])?.Contains(port) == true)
+                        {
+                            this.SerialPorts.SelectedItem = port;
+                        }
+                    }
+
+                    //Target variables
+                    if (reader.ReadToFollowing("TargetVariables") == true)
+                    {
+                        if ((reader.IsStartElement() == true) && (reader.IsEmptyElement == false))
+                        {
+                            reader.Read();
+                            while (reader.Read() == true)
+                            {
+                                //reader.Read();
+                                if (reader.Name == "TargetVariables")
+                                {
+                                    break;
+                                }
+                                if (reader.Name == "Variable")
+                                {
+                                    var variable = new VariableInfo();
+                                    if (byte.TryParse(reader.GetAttribute("ID"), out byte ID) == true)
+                                    {
+                                        variable.ID = ID;
+                                    }
+                                    variable.Value = reader.GetAttribute("Value");
+                                    variable.VariableTypeName = reader.GetAttribute("Type");
+                                    if (bool.TryParse(reader.GetAttribute("Plot"), out bool plot) == true)
+                                    {
+                                        variable.Plot = plot;
+                                    }
+                                    this.TargetVariables.Add(variable);
+                                }
+                            }
+                        }
+                    }
+
+                    //Own variables
+                    if (reader.ReadToFollowing("OwnVariables") == true)
+                    {
+                        if ((reader.IsStartElement() == true) && (reader.IsEmptyElement == false))
+                        {
+                            reader.Read();
+                            while (reader.Read() == true)
+                            {
+                                //reader.Read();
+                                if (reader.Name == "OwnVariables")
+                                {
+                                    break;
+                                }
+                                if (reader.Name == "Variable")
+                                {
+                                    var variable = new VariableInfo();
+                                    if (byte.TryParse(reader.GetAttribute("ID"), out byte ID) == true)
+                                    {
+                                        variable.ID = ID;
+                                    }
+                                    variable.Value = reader.GetAttribute("Value");
+                                    variable.VariableTypeName = reader.GetAttribute("Type");
+                                    if (bool.TryParse(reader.GetAttribute("Plot"), out bool plot) == true)
+                                    {
+                                        variable.Plot = plot;
+                                    }
+                                    this.OwnVariables.Add(variable);
+                                }
+                            }
+                        }
+                    }
+
+                    //Graph update rate
+                    if (reader.ReadToFollowing("UpdateRate") == true)
+                    {
+                        if (int.TryParse(reader.ReadElementContentAsString(), out int rate) == true)
+                        {
+                            this.UpdateRate = rate;
+                        }
+                    }
+                }
+
+            }
+            catch
+            {
+
+            }
+        }
+
+        private void WriteXml()
+        {
+            //Create writer
+            var writer = XmlWriter.Create("MuComGUI.xml", new XmlWriterSettings() { Indent = true });
+            if (writer != null)
+            {
+                //Write data
+                writer.WriteStartElement("MuComGUIConfig");
+
+                //Serial port
+                writer.WriteElementString("SerialPort", this.SerialPorts.SelectedItem?.ToString());
+
+                //Target variables
+                writer.WriteStartElement("TargetVariables");
+                foreach (var variable in this.TargetVariables)
+                {
+                    writer.WriteStartElement("Variable");
+                    writer.WriteAttributeString("ID", variable.ID.ToString());
+                    writer.WriteAttributeString("Value", variable.Value);
+                    writer.WriteAttributeString("Type", variable.VariableTypeName);
+                    writer.WriteAttributeString("Plot", variable.Plot.ToString());
+                    writer.WriteEndElement();
+                }
+                writer.WriteEndElement();
+
+                //Own variables
+                writer.WriteStartElement("OwnVariables");
+                foreach (var variable in this.OwnVariables)
+                {
+                    writer.WriteStartElement("Variable");
+                    writer.WriteAttributeString("ID", variable.ID.ToString());
+                    writer.WriteAttributeString("Value", variable.Value);
+                    writer.WriteAttributeString("Type", variable.VariableTypeName);
+                    writer.WriteAttributeString("Plot", variable.Plot.ToString());
+                    writer.WriteEndElement();
+                }
+                writer.WriteEndElement();
+
+                //Graph update rate
+                writer.WriteElementString("UpdateRate", this.UpdateRate.ToString());
+
+                writer.WriteEndElement();
+
+                //Write data to file
+                writer.Flush();
             }
         }
 
@@ -271,6 +422,11 @@ namespace MuComGUI
             {
 
             }
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            this.WriteXml();
         }
 
         #endregion

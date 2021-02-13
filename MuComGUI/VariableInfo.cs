@@ -66,7 +66,8 @@ namespace MuComGUI
             get => MuComHandler.AllowedVariableTypes[this._variableType];
             set
             {
-                this._variableType = (MuComHandler.AllowedVariableTypes as List<Type>).IndexOf(value);
+                int index = (MuComHandler.AllowedVariableTypes as List<Type>).IndexOf(value);
+                this._variableType = index >= 0 ? index : 0;
                 OnPropertyChanged();
             }
         }
@@ -75,7 +76,8 @@ namespace MuComGUI
             get => VariableInfo.AllowedVariableTypeNames[this._variableType];
             set
             {
-                this._variableType = (VariableInfo.AllowedVariableTypeNames as List<string>).IndexOf(value);
+                int index = (VariableInfo.AllowedVariableTypeNames as List<string>).IndexOf(value);
+                this._variableType = index >= 0 ? index : 0;
                 OnPropertyChanged();
             }
         }

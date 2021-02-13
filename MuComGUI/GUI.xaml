@@ -6,7 +6,7 @@
         xmlns:oxy="http://oxyplot.org/wpf"
         xmlns:local="clr-namespace:MuComGUI"
         mc:Ignorable="d"
-        Title="MuComGUI" Height="450" MinHeight="450" Width="550"  MinWidth="610">
+        Title="MuComGUI" Height="450" MinHeight="450" Width="550"  MinWidth="610" Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
