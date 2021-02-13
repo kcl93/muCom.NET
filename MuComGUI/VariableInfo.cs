@@ -1,4 +1,6 @@
 ﻿using MuCom;
+using OxyPlot;
+using OxyPlot.Axes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -89,9 +91,15 @@ namespace MuComGUI
             set
             {
                 this._Plot = value;
+                if(value == false)
+                {
+                    this.DataPoints.Clear();
+                }
                 OnPropertyChanged();
             }
         }
+
+        public readonly List<DataPoint> DataPoints = new List<DataPoint>(1000);
 
         #endregion
 
@@ -110,42 +118,61 @@ namespace MuComGUI
         {
             try
             {
+                double value;
                 switch (this._variableType)
                 {
                     case 0:
-                        this.Value = handler.ReadSByte(this.ID).ToString();
+                        value = (float)handler.ReadSByte(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 1:
-                        this.Value = handler.ReadShort(this.ID).ToString();
+                        value = (double)handler.ReadShort(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 2:
-                        this.Value = handler.ReadInt(this.ID).ToString();
+                        value = handler.ReadInt(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 3:
-                        this.Value = handler.ReadLong(this.ID).ToString();
+                        value = handler.ReadLong(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 4:
-                        this.Value = handler.ReadByte(this.ID).ToString();
+                        value = handler.ReadByte(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 5:
-                        this.Value = handler.ReadUShort(this.ID).ToString();
+                        value = handler.ReadUShort(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 6:
-                        this.Value = handler.ReadUInt(this.ID).ToString();
+                        value = handler.ReadUInt(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 7:
-                        this.Value = handler.ReadULong(this.ID).ToString();
+                        value = handler.ReadULong(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString();
                         break;
 
                     case 8:
-                        this.Value = handler.ReadFloat(this.ID).ToString();
+                        value = handler.ReadFloat(this.ID);
+                        this.AddValue(value);
+                        this.Value = value.ToString("F3");
                         break;
 
                     default:
@@ -199,6 +226,24 @@ namespace MuComGUI
                 case 8:
                     handler.WriteFloat(this.ID, float.Parse(this.Value));
                     break;
+            }
+        }
+
+        private void AddValue(double value)
+        {
+            var timestamp = TimeSpanAxis.ToDouble(DateTime.Now - GUI.graphStartTime);
+
+            if(this.DataPoints.Count < this.DataPoints.Capacity)
+            {
+                this.DataPoints.Add(new DataPoint(timestamp, value));
+            }
+            else
+            {
+                for (int i = 1; i < this.DataPoints.Count; i++)
+                {
+                    this.DataPoints[i - 1] = this.DataPoints[i];
+                }
+                this.DataPoints[this.DataPoints.Count - 1] = new DataPoint(timestamp, value);
             }
         }
 

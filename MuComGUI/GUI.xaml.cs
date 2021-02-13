@@ -91,11 +91,9 @@ namespace MuComGUI
             }
         }
 
-        private DateTime graphStartTime;
+        public static DateTime graphStartTime;
 
         readonly private PlotModel graphModel = new PlotModel();
-
-        readonly private Dictionary<VariableInfo, List<DataPoint>> DataPoints = new Dictionary<VariableInfo, List<DataPoint>>();
 
         #endregion
 
@@ -159,17 +157,6 @@ namespace MuComGUI
                         }
                     }
                 }
-
-                //foreach (var data in this.DataPoints)
-                //{
-                //    var value = this.muCom.Read((byte)data.Key.ID, 1);
-                //    var timestamp = DateTime.Now - this.graphStartTime;
-                //    //if (data.Value.Count >= 800)
-                //    //{
-
-                //    //}
-                //    //data.Value[data.Value.Count - 1] = new DataPoint();
-                //}
             }
         }
 
@@ -178,12 +165,25 @@ namespace MuComGUI
             if(this.GraphActive.IsChecked == true)
             {
                 this.graphModel.Series.Clear();
-                foreach (var data in this.DataPoints)
+                foreach (var variable in this.TargetVariables)
                 {
-                    var series = new LineSeries();
-                    series.Title = "Addr " + data.Key.ID.ToString();
-                    series.ItemsSource = data.Value;
-                    this.graphModel.Series.Add(series);
+                    if (variable.Plot == true)
+                    {
+                        var series = new LineSeries();
+                        series.Title = "Target " + variable.ID.ToString();
+                        series.ItemsSource = variable.DataPoints;
+                        this.graphModel.Series.Add(series);
+                    }
+                }
+                foreach (var variable in this.OwnVariables)
+                {
+                    if (variable.Plot == true)
+                    {
+                        var series = new LineSeries();
+                        series.Title = "Target " + variable.ID.ToString();
+                        series.ItemsSource = variable.DataPoints;
+                        this.graphModel.Series.Add(series);
+                    }
                 }
                 this.Graph.InvalidatePlot(true);
             }
@@ -372,7 +372,7 @@ namespace MuComGUI
 
         private void NumericTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            var allowedKeys = new List<Key>() { Key.D0, Key.D1, Key.D2, Key.D3, Key.D4, Key.D5, Key.D6, Key.D7, Key.D8, Key.D9 };
+            var allowedKeys = new List<Key>() { Key.D0, Key.D1, Key.D2, Key.D3, Key.D4, Key.D5, Key.D6, Key.D7, Key.D8, Key.D9, Key.NumPad0, Key.NumPad1, Key.NumPad2, Key.NumPad3, Key.NumPad4, Key.NumPad5, Key.NumPad6, Key.NumPad7, Key.NumPad8, Key.NumPad9 };
             if(allowedKeys.Contains(e.Key) == false)
             {
                 e.Handled = true;
@@ -381,25 +381,8 @@ namespace MuComGUI
 
         private void GraphActive_Checked(object sender, RoutedEventArgs e)
         {
-            this.DataPoints.Clear();
-            this.graphStartTime = new DateTime();
-
-            foreach (var variable in this.TargetVariables)
-            {
-                if (variable.Plot == true)
-                {
-                    this.DataPoints.Add(variable, new List<DataPoint>() { new DataPoint(0.0, variable.ToDouble()) });
-                }
-            }
-
-            foreach (var variable in this.OwnVariables)
-            {
-                if (variable.Plot == true)
-                {
-                    this.DataPoints.Add(variable, new List<DataPoint>() { new DataPoint(0.0, variable.ToDouble()) });
-                }
-            }
-
+            GUI.graphStartTime = new DateTime();
+         
             this.GraphTimer.Start();
             this.Timer = new Timer(this.UpdateData, null, 0, this.UpdateRate);
         }
