@@ -91,7 +91,9 @@ namespace MuComGUI
             }
         }
 
-        public static DateTime graphStartTime;
+        public static DateTime graphStartTime = DateTime.Now;
+
+        public static int GraphValueCount = 1000;
 
         readonly private PlotModel graphModel = new PlotModel();
 
@@ -157,6 +159,25 @@ namespace MuComGUI
                         }
                     }
                 }
+
+                foreach (var variable in this.OwnVariables)
+                {
+                    if (variable.Plot == true)
+                    {
+                        try
+                        {
+                            if(double.TryParse(variable.Value, out double value) == false)
+                            {
+                                value = double.NaN;
+                            }
+                            variable.AddDataPoint(value);
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
             }
         }
 
@@ -204,6 +225,24 @@ namespace MuComGUI
                         if ((this.SerialPorts.ItemsSource as string[])?.Contains(port) == true)
                         {
                             this.SerialPorts.SelectedItem = port;
+                        }
+                    }
+
+                    //Graph update rate
+                    if (reader.ReadToFollowing("UpdateRate") == true)
+                    {
+                        if (int.TryParse(reader.ReadElementContentAsString(), out int rate) == true)
+                        {
+                            this.UpdateRate = rate;
+                        }
+                    }
+
+                    //Graph update rate
+                    if (reader.ReadToFollowing("GraphValueCount") == true)
+                    {
+                        if (int.TryParse(reader.ReadElementContentAsString(), out int count) == true)
+                        {
+                            GUI.GraphValueCount = count;
                         }
                     }
 
@@ -270,15 +309,6 @@ namespace MuComGUI
                             }
                         }
                     }
-
-                    //Graph update rate
-                    if (reader.ReadToFollowing("UpdateRate") == true)
-                    {
-                        if (int.TryParse(reader.ReadElementContentAsString(), out int rate) == true)
-                        {
-                            this.UpdateRate = rate;
-                        }
-                    }
                 }
 
             }
@@ -299,6 +329,12 @@ namespace MuComGUI
 
                 //Serial port
                 writer.WriteElementString("SerialPort", this.SerialPorts.SelectedItem?.ToString());
+
+                //Graph update rate
+                writer.WriteElementString("UpdateRate", this.UpdateRate.ToString());
+
+                //Graph value count per variable
+                writer.WriteElementString("GraphValueCount", GUI.GraphValueCount.ToString());
 
                 //Target variables
                 writer.WriteStartElement("TargetVariables");
@@ -325,9 +361,6 @@ namespace MuComGUI
                     writer.WriteEndElement();
                 }
                 writer.WriteEndElement();
-
-                //Graph update rate
-                writer.WriteElementString("UpdateRate", this.UpdateRate.ToString());
 
                 writer.WriteEndElement();
 
@@ -381,8 +414,7 @@ namespace MuComGUI
 
         private void GraphActive_Checked(object sender, RoutedEventArgs e)
         {
-            GUI.graphStartTime = new DateTime();
-         
+            GUI.graphStartTime = DateTime.Now;
             this.GraphTimer.Start();
             this.Timer = new Timer(this.UpdateData, null, 0, this.UpdateRate);
         }

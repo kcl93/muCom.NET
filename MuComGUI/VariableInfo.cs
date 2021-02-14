@@ -93,13 +93,13 @@ namespace MuComGUI
                 this._Plot = value;
                 if(value == false)
                 {
-                    this.DataPoints.Clear();
+                    Array.Clear(this.DataPoints, 0, this.DataPoints.Length);
                 }
                 OnPropertyChanged();
             }
         }
 
-        public readonly List<DataPoint> DataPoints = new List<DataPoint>(1000);
+        public readonly DataPoint[] DataPoints = new DataPoint[GUI.GraphValueCount];
 
         #endregion
 
@@ -123,55 +123,55 @@ namespace MuComGUI
                 {
                     case 0:
                         value = (float)handler.ReadSByte(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 1:
                         value = (double)handler.ReadShort(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 2:
                         value = handler.ReadInt(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 3:
                         value = handler.ReadLong(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 4:
                         value = handler.ReadByte(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 5:
                         value = handler.ReadUShort(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 6:
                         value = handler.ReadUInt(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 7:
                         value = handler.ReadULong(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 8:
                         value = handler.ReadFloat(this.ID);
-                        this.AddValue(value);
+                        this.AddDataPoint(value);
                         this.Value = value.ToString("F3");
                         break;
 
@@ -183,6 +183,7 @@ namespace MuComGUI
             catch
             {
                 this.Value = "Error!";
+                this.AddDataPoint(double.NaN);
                 throw;
             }
         }
@@ -229,22 +230,13 @@ namespace MuComGUI
             }
         }
 
-        private void AddValue(double value)
+        public void AddDataPoint(double value)
         {
             var timestamp = TimeSpanAxis.ToDouble(DateTime.Now - GUI.graphStartTime);
 
-            if(this.DataPoints.Count < this.DataPoints.Capacity)
-            {
-                this.DataPoints.Add(new DataPoint(timestamp, value));
-            }
-            else
-            {
-                for (int i = 1; i < this.DataPoints.Count; i++)
-                {
-                    this.DataPoints[i - 1] = this.DataPoints[i];
-                }
-                this.DataPoints[this.DataPoints.Count - 1] = new DataPoint(timestamp, value);
-            }
+            Array.Copy(this.DataPoints, 0, this.DataPoints, 1, this.DataPoints.Length - 1);
+
+            this.DataPoints[0] = new DataPoint(timestamp, value);
         }
 
         #endregion
