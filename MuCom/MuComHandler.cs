@@ -64,7 +64,9 @@ namespace MuCom
             typeof(ushort),
             typeof(uint),
             typeof(ulong),
-            typeof(float)
+            typeof(float),
+            typeof(double),
+            typeof(byte[])
         };
 
         #endregion
@@ -79,8 +81,10 @@ namespace MuCom
 
         #region Structs
 
-        private struct VariableAccessors
+        private struct LinkedVariable
         {
+            internal Type type;
+            internal int byteCount;
             internal object variable;
             internal WriteVariable Write;
             internal ReadVariable Read;
@@ -100,7 +104,7 @@ namespace MuCom
 
         private readonly Dictionary<byte, MuComFunction> linkedFunctions = new Dictionary<byte, MuComFunction>();
 
-        private readonly Dictionary<byte, VariableAccessors> linkedVariables = new Dictionary<byte, VariableAccessors>();
+        private readonly Dictionary<byte, LinkedVariable> linkedVariables = new Dictionary<byte, LinkedVariable>();
 
         #region Locks
 
@@ -225,7 +229,7 @@ namespace MuCom
 
         public void LinkVariable(byte ID, object obj, string name)
         {
-            VariableAccessors accessors;
+            LinkedVariable accessors;
 
             Type type = obj.GetType();
             if (type.GetField(name) is null)
@@ -246,6 +250,7 @@ namespace MuCom
                 //It is a property
                 accessors.Write = new WriteVariable(variable.SetValue);
                 accessors.Read = new ReadVariable(variable.GetValue);
+                accessors.type = variable.PropertyType;
             }
             else
             {
@@ -260,9 +265,16 @@ namespace MuCom
                 //It is a field
                 accessors.Write = new WriteVariable(variable.SetValue);
                 accessors.Read = new ReadVariable(variable.GetValue);
+                accessors.type = variable.FieldType;
             }
 
             accessors.variable = obj;
+
+            if (MuComHandler.AllowedVariableTypes.Where(x => x == accessors.type).Any() == false)
+            {
+                throw new ArgumentException("The type of the given field is not supported by MuCom!");
+            }
+            accessors.byteCount = MuComDataConverter.VariableByteCount[accessors.type];
 
             lock (variableLock)
             {
@@ -313,64 +325,52 @@ namespace MuCom
 
         public byte ReadByte(byte ID)
         {
-            return this.Read(ID, 1)[0];
+            return MuComDataConverter.GetByte(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(byte)]));
         }
 
         public sbyte ReadSByte(byte ID)
         {
-            return (sbyte)this.ReadByte(ID);
+            return MuComDataConverter.GetSByte(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(sbyte)]));
         }
 
         public ushort ReadUShort(byte ID)
         {
-            var data = this.Read(ID, 2);
-            ushort value = (ushort)data[0];
-            value += (ushort)(data[1] * 256);
-            return value;
+            return MuComDataConverter.GetUShort(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(ushort)]));
         }
 
         public short ReadShort(byte ID)
         {
-            return (short)this.ReadUShort(ID);
+            return MuComDataConverter.GetShort(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(short)]));
         }
 
         public uint ReadUInt(byte ID)
         {
-            var data = this.Read(ID, 4);
-            uint value = (uint)data[0];
-            value += (uint)data[1] * 256;
-            value += (uint)data[2] * 256 * 256;
-            value += (uint)data[3] * 256 * 256 * 256;
-            return value;
+            return MuComDataConverter.GetUInt(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(uint)]));
         }
 
         public int ReadInt(byte ID)
         {
-            return (int)this.ReadUInt(ID);
+            return MuComDataConverter.GetInt(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(int)]));
         }
 
         public ulong ReadULong(byte ID)
         {
-            var data = this.Read(ID, 8);
-            ulong value = (ulong)data[0];
-            value += (ulong)data[1] * 256;
-            value += (ulong)data[2] * 256 * 256;
-            value += (ulong)data[3] * 256 * 256 * 256;
-            value += (ulong)data[4] * 256 * 256 * 256 * 256;
-            value += (ulong)data[5] * 256 * 256 * 256 * 256 * 256;
-            value += (ulong)data[6] * 256 * 256 * 256 * 256 * 256 * 256;
-            value += (ulong)data[7] * 256 * 256 * 256 * 256 * 256 * 256 * 256;
-            return value;
+            return MuComDataConverter.GetULong(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(ulong)]));
         }
 
         public long ReadLong(byte ID)
         {
-            return (long)this.ReadULong(ID);
+            return MuComDataConverter.GetLong(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(long)]));
         }
 
         public float ReadFloat(byte ID)
         {
-            return BitConverter.ToSingle(this.Read(ID, 4), 0);
+            return MuComDataConverter.GetFloat(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(float)]));
+        }
+
+        public double ReadDouble(byte ID)
+        {
+            return MuComDataConverter.GetDouble(this.Read(ID, MuComDataConverter.VariableByteCount[typeof(double)]));
         }
 
         #endregion
@@ -385,64 +385,52 @@ namespace MuCom
 
         public void WriteByte(byte ID, byte value)
         {
-            this.Write(ID, new byte[] { value });
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteSByte(byte ID, sbyte value)
         {
-            this.WriteByte(ID, (byte)value);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteUShort(byte ID, ushort value)
         {
-            var data = new byte[2];
-            data[0] = (byte)value;
-            data[1] = (byte)(value / 256);
-            this.Write(ID, data);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteShort(byte ID, short value)
         {
-            this.WriteUShort(ID, (ushort)value);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteUInt(byte ID, uint value)
         {
-            var data = new byte[4];
-            data[0] = (byte)value;
-            data[1] = (byte)(value / 256);
-            data[2] = (byte)(value / 256 / 256);
-            data[3] = (byte)(value / 256 / 256 / 256);
-            this.Write(ID, data);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteInt(byte ID, int value)
         {
-            this.WriteUInt(ID, (uint)value);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteULong(byte ID, ulong value)
         {
-            var data = new byte[4];
-            data[0] = (byte)value;
-            data[1] = (byte)(value / 256);
-            data[2] = (byte)(value / 256 / 256);
-            data[3] = (byte)(value / 256 / 256 / 256);
-            data[4] = (byte)(value / 256 / 256 / 256 / 256);
-            data[5] = (byte)(value / 256 / 256 / 256 / 256 / 256);
-            data[6] = (byte)(value / 256 / 256 / 256 / 256 / 256 / 256);
-            data[7] = (byte)(value / 256 / 256 / 256 / 256 / 256 / 256 / 256);
-            this.Write(ID, data);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteLong(byte ID, long value)
         {
-            this.WriteULong(ID, (ulong)value);
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         public void WriteFloat(byte ID, float value)
         {
-            this.Write(ID, BitConverter.GetBytes(value));
+            this.Write(ID, MuComDataConverter.GetBytes(value));
+        }
+
+        public void WriteDouble(byte ID, double value)
+        {
+            this.Write(ID, MuComDataConverter.GetBytes(value));
         }
 
         #endregion
@@ -584,15 +572,50 @@ namespace MuCom
                     {
                         var value = this.linkedVariables[frame.ID].Read(this.linkedVariables[frame.ID].variable);
 
-                        if (value is sbyte) data = BitConverter.GetBytes((sbyte)value);
-                        else if (value is short) data = BitConverter.GetBytes((short)value);
-                        else if (value is int) data = BitConverter.GetBytes((int)value);
-                        else if (value is long) data = BitConverter.GetBytes((long)value);
-                        else if (value is byte) data = BitConverter.GetBytes((byte)value);
-                        else if (value is ushort) data = BitConverter.GetBytes((ushort)value);
-                        else if (value is uint) data = BitConverter.GetBytes((uint)value);
-                        else if (value is byte) data = BitConverter.GetBytes((byte)value);
-                        else if (value is ulong) data = BitConverter.GetBytes((ulong)value);
+                        if (value is sbyte)
+                        {
+                            data = MuComDataConverter.GetBytes((sbyte)value);
+                        }
+                        else if (value is short)
+                        {
+                            data = MuComDataConverter.GetBytes((short)value);
+                        }
+                        else if (value is int)
+                        {
+                            data = MuComDataConverter.GetBytes((int)value);
+                        }
+                        else if (value is long)
+                        {
+                            data = MuComDataConverter.GetBytes((long)value);
+                        }
+                        else if (value is byte)
+                        {
+                            data = MuComDataConverter.GetBytes((byte)value);
+                        }
+                        else if (value is ushort)
+                        {
+                            data = MuComDataConverter.GetBytes((ushort)value);
+                        }
+                        else if (value is uint)
+                        {
+                            data = MuComDataConverter.GetBytes((uint)value);
+                        }
+                        else if (value is byte)
+                        {
+                            data = MuComDataConverter.GetBytes((byte)value);
+                        }
+                        else if (value is ulong)
+                        {
+                            data = MuComDataConverter.GetBytes((ulong)value);
+                        }
+                        else if (value is float)
+                        {
+                            data = MuComDataConverter.GetBytes((float)value);
+                        }
+                        else if(value is double)
+                        {
+                            data = MuComDataConverter.GetBytes((double)value);
+                        }
                     }
 
                     var response = new MuComFrame(MuComFrameDesc.ReadResponse, this.lastFrame.ID, this.lastFrame.DataCount, data);
@@ -613,7 +636,47 @@ namespace MuCom
                         return;
                     }
 
-                    this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, 0);
+                    var type = this.linkedVariables[frame.ID].type;
+                    if(type == typeof(sbyte))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetSByte(frame.DataBytes));
+                    }
+                    else if(type == typeof(short))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetShort(frame.DataBytes));
+                    }
+                    else if(type == typeof(int))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetInt(frame.DataBytes));
+                    }
+                    else if(type == typeof(long))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetLong(frame.DataBytes));
+                    }
+                    else if(type == typeof(byte))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetByte(frame.DataBytes));
+                    }
+                    else if (type == typeof(ushort))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetUShort(frame.DataBytes));
+                    }
+                    else if (type == typeof(uint))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetUInt(frame.DataBytes));
+                    }
+                    else if (type == typeof(ulong))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetULong(frame.DataBytes));
+                    }
+                    else if(type == typeof(float))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetFloat(frame.DataBytes));
+                    }
+                    else if(type == typeof(double))
+                    {
+                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetDouble(frame.DataBytes));
+                    }
                 }
             }
         }

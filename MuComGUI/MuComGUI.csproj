@@ -66,6 +66,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ConfigHandler.cs" />
     <Compile Include="VariableInfo.cs" />
     <Page Include="GUI.xaml">
       <Generator>MSBuild:Compile</Generator>

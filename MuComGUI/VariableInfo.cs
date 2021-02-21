@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace MuComGUI
 {
@@ -33,7 +34,8 @@ namespace MuComGUI
             "uint16_t",
             "uint32_t",
             "int64_t",
-            "float"
+            "float",
+            "double"
         };
 
         #endregion
@@ -97,6 +99,12 @@ namespace MuComGUI
                 }
                 OnPropertyChanged();
             }
+        }
+
+        public byte[] ByteData
+        {
+            get => this.GetByteData();
+            set => this.SetByteData(value);
         }
 
         public readonly DataPoint[] DataPoints = new DataPoint[GUI.GraphValueCount];
@@ -175,6 +183,12 @@ namespace MuComGUI
                         this.Value = value.ToString("F3");
                         break;
 
+                    case 9:
+                        value = handler.ReadDouble(this.ID);
+                        this.AddDataPoint(value);
+                        this.Value = value.ToString("F6");
+                        break;
+
                     default:
                         this.Value = "Invalid type!";
                         break;
@@ -227,6 +241,10 @@ namespace MuComGUI
                 case 8:
                     handler.WriteFloat(this.ID, float.Parse(this.Value));
                     break;
+
+                case 9:
+                    handler.WriteDouble(this.ID, float.Parse(this.Value));
+                    break;
             }
         }
 
@@ -237,6 +255,102 @@ namespace MuComGUI
             Array.Copy(this.DataPoints, 0, this.DataPoints, 1, this.DataPoints.Length - 1);
 
             this.DataPoints[0] = new DataPoint(timestamp, value);
+        }
+
+        private byte[] GetByteData()
+        {
+            if (double.TryParse(this.Value, out double value) == true)
+            {
+                switch (this._variableType)
+                {
+                    case 0:
+                        return BitConverter.GetBytes((sbyte)value);
+
+                    case 1:
+                        return BitConverter.GetBytes((short)value);
+
+                    case 2:
+                        return BitConverter.GetBytes((int)value);
+
+                    case 3:
+                        return BitConverter.GetBytes((long)value);
+
+                    case 4:
+                        return BitConverter.GetBytes((byte)value);
+
+                    case 5:
+                        return BitConverter.GetBytes((ushort)value);
+
+                    case 6:
+                        return BitConverter.GetBytes((uint)value);
+
+                    case 7:
+                        return BitConverter.GetBytes((ulong)value);
+
+                    case 8:
+                        return BitConverter.GetBytes((float)value);
+                }
+            }
+
+            return null;
+        }
+
+        private void SetByteData(byte[] data)
+        {
+            switch (this._variableType)
+            {
+                case 0:
+                    this.Value = ((sbyte)data[0]).ToString();
+                    this.AddDataPoint((double)(sbyte)data[0]);
+                    break;
+
+                case 1:
+                    long iVar = BitConverter.ToInt16(data, 0);
+                    this.Value = iVar.ToString();
+                    this.AddDataPoint((double)iVar);
+                    break;
+
+                case 2:
+                    iVar = BitConverter.ToInt32(data, 0);
+                    this.Value = iVar.ToString();
+                    this.AddDataPoint((double)iVar);
+                    break;
+
+                case 3:
+                    iVar = BitConverter.ToInt64(data, 0);
+                    this.Value = iVar.ToString();
+                    this.AddDataPoint((double)iVar);
+                    break;
+
+                case 4:
+                    this.Value = data[0].ToString();
+                    this.AddDataPoint((double)data[0]);
+                    break;
+
+                case 5:
+                    ulong uVar = BitConverter.ToUInt16(data, 0);
+                    this.Value = uVar.ToString();
+                    this.AddDataPoint((double)uVar);
+                    break;
+
+                case 6:
+                    uVar = BitConverter.ToUInt32(data, 0);
+                    this.Value = uVar.ToString();
+                    this.AddDataPoint((double)uVar);
+                    break;
+
+                case 7:
+                    uVar = BitConverter.ToUInt64(data, 0);
+                    this.Value = uVar.ToString();
+                    this.AddDataPoint((double)uVar);
+                    break;
+
+                case 8:
+                    float fVar = BitConverter.ToSingle(data, 0);
+                    this.Value = fVar.ToString();
+                    this.AddDataPoint((double)fVar);
+                    break;
+            }
         }
 
         #endregion
