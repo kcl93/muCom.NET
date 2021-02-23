@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace MuCom
 {
-    public static class MuComDataConverter
+    internal static class MuComDataConverter
     {
         #region Structs
 

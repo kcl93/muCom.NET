@@ -41,7 +41,11 @@ namespace MuCom
 
         public void Open() => this.serial.Open();
 
-        public void Close() => this.serial.Close();
+        public void Close()
+        {
+            this.serial.DiscardInBuffer();
+            this.serial.Close();
+        }
 
         public int Available() => this.serial.BytesToRead;
 
