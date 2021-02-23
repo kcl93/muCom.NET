@@ -222,6 +222,7 @@ namespace MuComGUI
                 this.muCom.Open();
                 this.OpenButton.IsEnabled = false;
                 this.CloseButton.IsEnabled = true;
+                this.GraphActive.IsEnabled = true;
             }
             catch
             {
@@ -237,6 +238,8 @@ namespace MuComGUI
                 this.muCom?.Close();
                 this.OpenButton.IsEnabled = true;
                 this.CloseButton.IsEnabled = false;
+                this.GraphActive.IsEnabled = false;
+                this.GraphActive.IsChecked = false;
             }
             finally
             {
