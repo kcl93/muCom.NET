@@ -6,7 +6,7 @@ namespace MuCom
     {
         #region Fields and properties
 
-        private SerialPort serial = null;
+        private SerialPort Serial { get; }
 
         public int ReadTimeout { get; set; }
 
@@ -24,38 +24,38 @@ namespace MuCom
 
         internal SerialPortWrapper(string portName, int baudrate, Parity parity = Parity.None, StopBits stopBits = StopBits.One)
         {
-            this.serial = new SerialPort(portName, baudrate, parity, 8, stopBits);
+            this.Serial = new SerialPort(portName, baudrate, parity, 8, stopBits)
+            {
+                Handshake = Handshake.None,
+                DtrEnable = true,
+                RtsEnable = true,
+                ReceivedBytesThreshold = 1
+            };
 
-            this.serial.Handshake = Handshake.None;
-            this.serial.DtrEnable = true;
-            this.serial.RtsEnable = true;
-
-            this.serial.ReceivedBytesThreshold = 1;
-
-            this.serial.DataReceived += new SerialDataReceivedEventHandler(this.SerialDataReceivedHandler);
+            this.Serial.DataReceived += new SerialDataReceivedEventHandler(this.SerialDataReceivedHandler);
         }
 
         #endregion
 
         #region Methods
 
-        public void Open() => this.serial.Open();
+        public void Open() => this.Serial.Open();
 
         public void Close()
         {
-            this.serial.DiscardInBuffer();
-            this.serial.Close();
+            this.Serial.DiscardInBuffer();
+            this.Serial.Close();
         }
 
-        public int Available() => this.serial.BytesToRead;
+        public int Available() => this.Serial.BytesToRead;
 
-        public byte Read() => (byte)this.serial.ReadByte();
+        public byte Read() => (byte)this.Serial.ReadByte();
 
-        public void Write(byte[] data) => this.serial.Write(data, 0, data.Length);
+        public void Write(byte[] data) => this.Serial.Write(data, 0, data.Length);
 
         private void SerialDataReceivedHandler(object obj, SerialDataReceivedEventArgs e)
         {
-            ((DataReceivedEventHandler)this.DataReceived.Clone())?.Invoke(this.serial);
+            ((DataReceivedEventHandler)this.DataReceived.Clone())?.Invoke(this.Serial);
         }
 
         #endregion

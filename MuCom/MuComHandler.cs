@@ -4,6 +4,7 @@ using System.IO.Ports;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Reflection;
 using System.Linq;
 
 //  ##### Frame structure #####
@@ -70,25 +71,11 @@ namespace MuCom
         };
 
         #endregion
-
         #region Delegates
 
         private delegate void WriteVariable(object target, object value);
 
         private delegate object ReadVariable(object source);
-
-        #endregion
-
-        #region Structs
-
-        private struct LinkedVariable
-        {
-            internal Type type;
-            internal int byteCount;
-            internal object variable;
-            internal WriteVariable Write;
-            internal ReadVariable Read;
-        }
 
         #endregion
 
@@ -227,66 +214,20 @@ namespace MuCom
             }
         }
 
-        public void LinkVariable(byte ID, object obj, string name)
+        public void LinkVariable(object obj, byte ID, string name)
         {
-            LinkedVariable accessors;
+            if (obj is null) throw new ArgumentNullException(nameof(obj));
+            if (name is null) throw new ArgumentNullException(nameof(name));
 
-            Type type = obj.GetType();
-            if (type.GetField(name) is null)
-            {
-                if (type.GetProperty(name) is null)
-                {
-                    throw new ArgumentException("Object '" + type.Name + "' does not have a field or property with the name '" + name + "'");
-                }
+            this.LinkVariable(obj.GetType(), obj, ID, name);
+        }
 
-                var variable = type.GetProperty(name);
+        public void LinkVariable(Type type, byte ID, string name)
+        {
+            if (type is null) throw new ArgumentNullException(nameof(type));
+            if (name is null) throw new ArgumentNullException(nameof(name));
 
-                //Check variable type
-                if (MuComHandler.AllowedVariableTypes.Where(x => x == variable.PropertyType).Any() == false)
-                {
-                    throw new ArgumentException("Type '" + variable.PropertyType.Name + "' of property '" + name + "' of class '" + type.Name + "' is not supported!");
-                }
-
-                //It is a property
-                accessors.Write = new WriteVariable(variable.SetValue);
-                accessors.Read = new ReadVariable(variable.GetValue);
-                accessors.type = variable.PropertyType;
-            }
-            else
-            {
-                var variable = type.GetField(name);
-
-                //Check variable type
-                if (MuComHandler.AllowedVariableTypes.Where(x => x == variable.FieldType).Any() == false)
-                {
-                    throw new ArgumentException("Type '" + variable.FieldType.Name + "' of property '" + name + "' of class '" + type.Name + "' is not supported!");
-                }
-
-                //It is a field
-                accessors.Write = new WriteVariable(variable.SetValue);
-                accessors.Read = new ReadVariable(variable.GetValue);
-                accessors.type = variable.FieldType;
-            }
-
-            accessors.variable = obj;
-
-            if (MuComHandler.AllowedVariableTypes.Where(x => x == accessors.type).Any() == false)
-            {
-                throw new ArgumentException("The type of the given field is not supported by MuCom!");
-            }
-            accessors.byteCount = MuComDataConverter.VariableByteCount[accessors.type];
-
-            lock (variableLock)
-            {
-                if (this.linkedVariables.ContainsKey(ID) == true)
-                {
-                    this.linkedVariables[ID] = accessors;
-                }
-                else
-                {
-                    this.linkedVariables.Add(ID, accessors);
-                }
-            }
+            this.LinkVariable(type, null, ID, name);
         }
 
         #endregion
@@ -450,6 +391,52 @@ namespace MuCom
 
         #region Private helper methods
 
+        private void LinkVariable(Type type, object obj, byte ID, string name)
+        {
+            LinkedVariable variable;
+
+            if (type.GetField(name) is null)
+            {
+                if (type.GetProperty(name) is null)
+                {
+                    throw new ArgumentException("Object '" + type.Name + "' does not have a field or property with the name '" + name + "'");
+                }
+
+                //It is a property
+                variable = new LinkedVariable(type.GetProperty(name));
+                variable.type = (variable.info as PropertyInfo).PropertyType;
+            }
+            else
+            {
+                //It is a field
+                variable = new LinkedVariable(type.GetField(name));
+                variable.type = (variable.info as FieldInfo).FieldType;
+            }
+
+            variable.target = obj;
+
+            //Check for allowed variable types
+            if (MuComHandler.AllowedVariableTypes.Where(x => x == variable.type).Any() == false)
+            {
+                throw new ArgumentException("The type of the given field is not supported by MuCom!");
+            }
+
+            //Set byte count
+            variable.byteCount = MuComDataConverter.VariableByteCount[variable.type];
+
+            lock (variableLock)
+            {
+                if (this.linkedVariables.ContainsKey(ID) == true)
+                {
+                    this.linkedVariables[ID] = variable;
+                }
+                else
+                {
+                    this.linkedVariables.Add(ID, variable);
+                }
+            }
+        }
+
         private void DataReceivedHandler(object sender)
         {
             lock(serialLock)
@@ -567,55 +554,51 @@ namespace MuCom
                 {
                     byte[] data = new byte[frame.DataCount];
 
-                    //Check if a read accessor is there
-                    if (this.linkedVariables[frame.ID].Read != null)
-                    {
-                        var value = this.linkedVariables[frame.ID].Read(this.linkedVariables[frame.ID].variable);
+                    var value = this.linkedVariables[frame.ID].Read();
 
-                        if (value is sbyte)
-                        {
-                            data = MuComDataConverter.GetBytes((sbyte)value);
-                        }
-                        else if (value is short)
-                        {
-                            data = MuComDataConverter.GetBytes((short)value);
-                        }
-                        else if (value is int)
-                        {
-                            data = MuComDataConverter.GetBytes((int)value);
-                        }
-                        else if (value is long)
-                        {
-                            data = MuComDataConverter.GetBytes((long)value);
-                        }
-                        else if (value is byte)
-                        {
-                            data = MuComDataConverter.GetBytes((byte)value);
-                        }
-                        else if (value is ushort)
-                        {
-                            data = MuComDataConverter.GetBytes((ushort)value);
-                        }
-                        else if (value is uint)
-                        {
-                            data = MuComDataConverter.GetBytes((uint)value);
-                        }
-                        else if (value is byte)
-                        {
-                            data = MuComDataConverter.GetBytes((byte)value);
-                        }
-                        else if (value is ulong)
-                        {
-                            data = MuComDataConverter.GetBytes((ulong)value);
-                        }
-                        else if (value is float)
-                        {
-                            data = MuComDataConverter.GetBytes((float)value);
-                        }
-                        else if(value is double)
-                        {
-                            data = MuComDataConverter.GetBytes((double)value);
-                        }
+                    if (value is sbyte @sbyte)
+                    {
+                        data = MuComDataConverter.GetBytes(@sbyte);
+                    }
+                    else if (value is short @short)
+                    {
+                        data = MuComDataConverter.GetBytes(@short);
+                    }
+                    else if (value is int @int)
+                    {
+                        data = MuComDataConverter.GetBytes(@int);
+                    }
+                    else if (value is long @long)
+                    {
+                        data = MuComDataConverter.GetBytes(@long);
+                    }
+                    else if (value is byte @byte)
+                    {
+                        data = MuComDataConverter.GetBytes(@byte);
+                    }
+                    else if (value is ushort @ushort)
+                    {
+                        data = MuComDataConverter.GetBytes(@ushort);
+                    }
+                    else if (value is uint @uint)
+                    {
+                        data = MuComDataConverter.GetBytes(@uint);
+                    }
+                    else if (value is ulong @ulong)
+                    {
+                        data = MuComDataConverter.GetBytes(@ulong);
+                    }
+                    else if (value is float @float)
+                    {
+                        data = MuComDataConverter.GetBytes(@float);
+                    }
+                    else if(value is double @double)
+                    {
+                        data = MuComDataConverter.GetBytes(@double);
+                    }
+                    else if(value is byte[] @bytes)
+                    {
+                        data = @bytes;
                     }
 
                     var response = new MuComFrame(MuComFrameDesc.ReadResponse, this.lastFrame.ID, this.lastFrame.DataCount, data);
@@ -630,52 +613,51 @@ namespace MuCom
             {
                 if (this.linkedVariables.ContainsKey(frame.ID))
                 {
-                    //Check if a write accessor is there
-                    if(this.linkedVariables[frame.ID].Write is null)
-                    {
-                        return;
-                    }
-
-                    var type = this.linkedVariables[frame.ID].type;
+                    var linkedVariable = this.linkedVariables[frame.ID];
+                    var type = linkedVariable.type;
                     if(type == typeof(sbyte))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetSByte(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetSByte(frame.DataBytes));
                     }
                     else if(type == typeof(short))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetShort(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetShort(frame.DataBytes));
                     }
                     else if(type == typeof(int))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetInt(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetInt(frame.DataBytes));
                     }
                     else if(type == typeof(long))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetLong(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetLong(frame.DataBytes));
                     }
                     else if(type == typeof(byte))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetByte(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetByte(frame.DataBytes));
                     }
                     else if (type == typeof(ushort))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetUShort(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetUShort(frame.DataBytes));
                     }
                     else if (type == typeof(uint))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetUInt(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetUInt(frame.DataBytes));
                     }
                     else if (type == typeof(ulong))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetULong(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetULong(frame.DataBytes));
                     }
                     else if(type == typeof(float))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetFloat(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetFloat(frame.DataBytes));
                     }
                     else if(type == typeof(double))
                     {
-                        this.linkedVariables[frame.ID].Write(this.linkedVariables[frame.ID].variable, MuComDataConverter.GetDouble(frame.DataBytes));
+                        linkedVariable.Write(MuComDataConverter.GetDouble(frame.DataBytes));
+                    }
+                    else if(type == typeof(byte[]))
+                    {
+                        linkedVariable.Write(frame.DataBytes);
                     }
                 }
             }

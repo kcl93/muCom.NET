@@ -49,11 +49,9 @@ namespace MuComGUI
 
         Timer Timer = null;
 
-        Dispatcher dispatcher = null;
+        readonly DispatcherTimer GraphTimer = null;
 
-        DispatcherTimer GraphTimer = null;
-
-        MuComHandler muCom = null;
+        public static MuComHandler MuComHandler = null;
 
         public List<VariableInfo> TargetVariables { get; } = new List<VariableInfo>();
 
@@ -108,9 +106,6 @@ namespace MuComGUI
             //Get list of available COM ports
             this.SerialPorts.ItemsSource = SerialPort.GetPortNames();
 
-            //Get/create dispatcher for doing stuff in the GUI
-            this.dispatcher = Dispatcher.CurrentDispatcher;
-
             //Create timers for updating variables and the variable graph
             this.GraphTimer = new DispatcherTimer(DispatcherPriority.Background);
             this.GraphTimer.Interval = new TimeSpan(0, 0, 0, 0, 100);
@@ -143,7 +138,7 @@ namespace MuComGUI
             {
                 Monitor.Exit(this.waitLock);
 
-                if (this.muCom is null) return;
+                if (GUI.MuComHandler is null) return;
 
                 foreach(var variable in this.TargetVariables)
                 {
@@ -151,7 +146,7 @@ namespace MuComGUI
                     {
                         try
                         {
-                            variable.Read(this.muCom);
+                            variable.Read();
                         }
                         catch
                         {
@@ -218,11 +213,16 @@ namespace MuComGUI
         {
             try
             {
-                this.muCom = new MuComHandler(this.SerialPorts.Text, this.BaudRate);
-                this.muCom.Open();
+                GUI.MuComHandler = new MuComHandler(this.SerialPorts.Text, this.BaudRate);
+                GUI.MuComHandler.Open();
                 this.OpenButton.IsEnabled = false;
                 this.CloseButton.IsEnabled = true;
                 this.GraphActive.IsEnabled = true;
+                //Link existing variables
+                foreach(var variable in this.OwnVariables)
+                {
+                    variable.LinkVariable();
+                }
             }
             catch
             {
@@ -235,7 +235,7 @@ namespace MuComGUI
             try
             {
                 this.GraphActive.IsChecked = false;
-                this.muCom?.Close();
+                GUI.MuComHandler?.Close();
                 this.OpenButton.IsEnabled = true;
                 this.CloseButton.IsEnabled = false;
                 this.GraphActive.IsEnabled = false;
@@ -243,7 +243,7 @@ namespace MuComGUI
             }
             finally
             {
-                this.muCom = null;
+                GUI.MuComHandler = null;
             }
         }
 
@@ -294,7 +294,7 @@ namespace MuComGUI
                 var variable = (sender as Button).DataContext as VariableInfo;
                 if (variable is null) return;
 
-                variable.Read(this.muCom);
+                variable.Read();
             }
             catch
             {
@@ -312,7 +312,7 @@ namespace MuComGUI
                 var variable = (sender as Button).DataContext as VariableInfo;
                 if (variable is null) return;
 
-                variable.Write(this.muCom);
+                variable.Write();
             }
             catch
             {

@@ -2,7 +2,7 @@
 
 namespace MuCom
 {
-    internal class MuComFrame
+    public class MuComFrame
     {
         #region Fields and properties
 

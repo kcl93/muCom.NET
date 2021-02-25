@@ -21,9 +21,9 @@ namespace MuComTests
         }
 
         [Theory]
-        [InlineData(new byte[] { 0xE3, 0x5A, 0x43 }, MuComFrameDesc.ExecuteRequest, 237, new byte[1] { 0x43 })]
-        [InlineData(new byte[] { 0xB1, 0x12 }, MuComFrameDesc.ReadRequest, 73, new byte[0])]
-        [InlineData(new byte[] { 0xDC, 0x4A, 0x01, 0x11, 0x51, 0x2C, 0x78, 0x4D, 0x2F, 0x1B, 0x6F }, MuComFrameDesc.WriteRequest, 37, new byte[8] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF })]
+        [InlineData(new byte[3] { 0xE3, 0x5A, 0x43 }, MuComFrameDesc.ExecuteRequest, 237, new byte[1] { 0x43 })]
+        [InlineData(new byte[2] { 0xB1, 0x12 }, MuComFrameDesc.ReadRequest, 73, new byte[0])]
+        [InlineData(new byte[11] { 0xDC, 0x4A, 0x01, 0x11, 0x51, 0x2C, 0x78, 0x4D, 0x2F, 0x1B, 0x6F }, MuComFrameDesc.WriteRequest, 37, new byte[8] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF })]
         public void ConstructorMustDecodeFrameProperly(byte[] inputBuffer, MuComFrameDesc desc, byte ID, byte[] dataBytes)
         {
             //Arrange

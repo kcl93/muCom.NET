@@ -49,6 +49,7 @@ namespace MuComGUI
             set
             {
                 this._ID = value;
+                this.LinkVariable();
                 OnPropertyChanged();
             }
         }
@@ -72,6 +73,7 @@ namespace MuComGUI
             {
                 int index = (MuComHandler.AllowedVariableTypes as List<Type>).IndexOf(value);
                 this._variableType = index >= 0 ? index : 0;
+                this.LinkVariable();
                 OnPropertyChanged();
             }
         }
@@ -82,6 +84,7 @@ namespace MuComGUI
             {
                 int index = (VariableInfo.AllowedVariableTypeNames as List<string>).IndexOf(value);
                 this._variableType = index >= 0 ? index : 0;
+                this.LinkVariable();
                 OnPropertyChanged();
             }
         }
@@ -122,69 +125,71 @@ namespace MuComGUI
             return double.NaN;
         }
 
-        public void Read(MuComHandler handler)
+        public void Read()
         {
+            if (GUI.MuComHandler is null) return;
+
             try
             {
                 double value;
                 switch (this._variableType)
                 {
                     case 0:
-                        value = (float)handler.ReadSByte(this.ID);
+                        value = (float)GUI.MuComHandler.ReadSByte(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 1:
-                        value = (double)handler.ReadShort(this.ID);
+                        value = (double)GUI.MuComHandler.ReadShort(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 2:
-                        value = handler.ReadInt(this.ID);
+                        value = GUI.MuComHandler.ReadInt(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 3:
-                        value = handler.ReadLong(this.ID);
+                        value = GUI.MuComHandler.ReadLong(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 4:
-                        value = handler.ReadByte(this.ID);
+                        value = GUI.MuComHandler.ReadByte(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 5:
-                        value = handler.ReadUShort(this.ID);
+                        value = GUI.MuComHandler.ReadUShort(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 6:
-                        value = handler.ReadUInt(this.ID);
+                        value = GUI.MuComHandler.ReadUInt(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 7:
-                        value = handler.ReadULong(this.ID);
+                        value = GUI.MuComHandler.ReadULong(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString();
                         break;
 
                     case 8:
-                        value = handler.ReadFloat(this.ID);
+                        value = GUI.MuComHandler.ReadFloat(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString("F3");
                         break;
 
                     case 9:
-                        value = handler.ReadDouble(this.ID);
+                        value = GUI.MuComHandler.ReadDouble(this.ID);
                         this.AddDataPoint(value);
                         this.Value = value.ToString("F6");
                         break;
@@ -202,48 +207,50 @@ namespace MuComGUI
             }
         }
 
-        public void Write(MuComHandler handler)
+        public void Write()
         {
+            if (GUI.MuComHandler is null) return;
+
             switch (this._variableType)
             {
                 case 0:
-                    handler.WriteSByte(this.ID, sbyte.Parse(this.Value));
+                    GUI.MuComHandler.WriteSByte(this.ID, sbyte.Parse(this.Value));
                     break;
 
                 case 1:
-                    handler.WriteShort(this.ID, short.Parse(this.Value));
+                    GUI.MuComHandler.WriteShort(this.ID, short.Parse(this.Value));
                     break;
 
                 case 2:
-                    handler.WriteInt(this.ID, int.Parse(this.Value));
+                    GUI.MuComHandler.WriteInt(this.ID, int.Parse(this.Value));
                     break;
 
                 case 3:
-                    handler.WriteLong(this.ID, long.Parse(this.Value));
+                    GUI.MuComHandler.WriteLong(this.ID, long.Parse(this.Value));
                     break;
 
                 case 4:
-                    handler.WriteByte(this.ID, byte.Parse(this.Value));
+                    GUI.MuComHandler.WriteByte(this.ID, byte.Parse(this.Value));
                     break;
 
                 case 5:
-                    handler.WriteUShort(this.ID, ushort.Parse(this.Value));
+                    GUI.MuComHandler.WriteUShort(this.ID, ushort.Parse(this.Value));
                     break;
 
                 case 6:
-                    handler.WriteUInt(this.ID, uint.Parse(this.Value));
+                    GUI.MuComHandler.WriteUInt(this.ID, uint.Parse(this.Value));
                     break;
 
                 case 7:
-                    handler.WriteULong(this.ID, ulong.Parse(this.Value));
+                    GUI.MuComHandler.WriteULong(this.ID, ulong.Parse(this.Value));
                     break;
 
                 case 8:
-                    handler.WriteFloat(this.ID, float.Parse(this.Value));
+                    GUI.MuComHandler.WriteFloat(this.ID, float.Parse(this.Value));
                     break;
 
                 case 9:
-                    handler.WriteDouble(this.ID, float.Parse(this.Value));
+                    GUI.MuComHandler.WriteDouble(this.ID, float.Parse(this.Value));
                     break;
             }
         }
@@ -255,6 +262,11 @@ namespace MuComGUI
             Array.Copy(this.DataPoints, 0, this.DataPoints, 1, this.DataPoints.Length - 1);
 
             this.DataPoints[0] = new DataPoint(timestamp, value);
+        }
+
+        public void LinkVariable()
+        {
+            GUI.MuComHandler?.LinkVariable(this, this.ID, "ByteData");
         }
 
         private byte[] GetByteData()
@@ -289,6 +301,9 @@ namespace MuComGUI
 
                     case 8:
                         return BitConverter.GetBytes((float)value);
+
+                    case 9:
+                        return BitConverter.GetBytes((double)value);
                 }
             }
 
@@ -347,8 +362,14 @@ namespace MuComGUI
 
                 case 8:
                     float fVar = BitConverter.ToSingle(data, 0);
-                    this.Value = fVar.ToString();
+                    this.Value = fVar.ToString("F3");
                     this.AddDataPoint((double)fVar);
+                    break;
+
+                case 9:
+                    double dVar = BitConverter.ToDouble(data, 0);
+                    this.Value = dVar.ToString("F6");
+                    this.AddDataPoint((double)dVar);
                     break;
             }
         }
